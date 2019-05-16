@@ -37,7 +37,7 @@ class App extends React.Component {
     to: '',
     text: '',
     file: null,
-    translation: '',
+    translation: null,
   };
 
   handleChange = (event) => {
@@ -54,19 +54,21 @@ class App extends React.Component {
     });
   };
 
-  handleSubmit = async (event) => {
+  handleSubmit = (event) => {
     event.preventDefault();
 
-    const { state } = this;
+    this.setState({ translation: null }, async () => {
+      const { state } = this;
 
-    const { translation } = await API.translate({
-      from: state.from,
-      to: state.to,
-      text: state.text,
-      file: state.file,
+      const translation = await API.translate({
+        from: state.from,
+        to: state.to,
+        text: state.text,
+        file: state.file,
+      });
+
+      this.setState({ translation });
     });
-
-    this.setState({ translation });
   };
 
   render() {
@@ -136,7 +138,30 @@ class App extends React.Component {
         </form>
 
         {state.translation && (
-          <h2>{state.translation}</h2>
+          <React.Fragment>
+            <h2>{state.translation.translation}</h2>
+            {state.text === '' && (
+              <React.Fragment>
+                <p>Detected text:</p>
+                <p>{state.translation.source}</p>
+              </React.Fragment>
+            )}
+            <p>
+              Translated from
+              {' '}
+              {languages.find(l => l.code === state.translation.sourceLanguage).name}
+              {' '}
+              {state.from === '' ? '(Detected) ' : ''}
+              to
+              {' '}
+              {languages.find(l => l.code === state.translation.targetLanguage).name}
+            </p>
+            {state.translation.audio && (
+              <audio controls> {/* eslint-disable-line */}
+                <source src={state.translation.audio} type="audio/mp3" />
+              </audio>
+            )}
+          </React.Fragment>
         )}
       </React.Fragment>
     );
